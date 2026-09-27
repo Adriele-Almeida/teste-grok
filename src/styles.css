@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+
+  --color-bg: #f2efe9;
+  --color-surface: #faf8f4;
+  --color-surface-2: #efebe3;
+  --color-ink: #1b1916;
+  --color-muted: #6e6960;
+  --color-subtle: #9a948a;
+  --color-primary: #2c3632;
+  --color-primary-fg: #f7f4ee;
+  --color-border: #e2dcd2;
+  --color-ring: #2c3632;
+
+  --color-ok: #3d6b4f;
+  --color-ok-bg: #e4ede6;
+  --color-wait: #8a6d3b;
+  --color-wait-bg: #f3ebd8;
+  --color-edit: #8b4a32;
+  --color-edit-bg: #f3e4dc;
+  --color-no: #7a3a3a;
+  --color-no-bg: #f0e0e0;
+  --color-draft: #6e6960;
+  --color-draft-bg: #e8e4dc;
+  --color-posted: #3d4f46;
+  --color-posted-bg: #dde5e0;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-border:
+    0px 0px 0px 1px rgba(27, 25, 22, 0.06),
+    0px 1px 2px -1px rgba(27, 25, 22, 0.06),
+    0px 2px 4px 0px rgba(27, 25, 22, 0.04);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-ink);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  img {
+    outline: 1px solid rgba(27, 25, 22, 0.1);
+    outline-offset: -1px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 18%, transparent);
+    color: var(--color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
