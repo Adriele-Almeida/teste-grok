@@ -1,0 +1,169 @@
+:root {
+  --paper: #f3efe8;
+  --ink: #1c1916;
+  --muted: #6d655c;
+  --line: #e3dcd2;
+  --card: #fffcf8;
+  --green: #1d3a31;
+  --green-soft: #e7f0ec;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: Figtree, sans-serif;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+
+.app { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 48px; }
+h1, h2, h3 { font-family: Fraunces, serif; font-weight: 560; letter-spacing: -0.03em; margin: 0; }
+h1 { font-size: clamp(1.55rem, 4vw, 2.15rem); line-height: 1.05; max-width: 16ch; }
+
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.between { justify-content: space-between; }
+.muted { color: var(--muted); }
+.note { color: var(--muted); font-size: 0.92rem; margin: 8px 0 0; }
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0 14px;
+}
+.btn.solid { background: var(--green); color: white; border-color: var(--green); }
+.btn.quiet { background: transparent; }
+.btn.danger { color: #8d2d2d; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 18px 0 12px; }
+.month-name { font-size: clamp(1.7rem, 5vw, 2.4rem); }
+
+.month, .dow-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dow { text-align: center; color: var(--muted); font-size: 0.75rem; padding-bottom: 4px; }
+.cell {
+  min-height: 78px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--card);
+  padding: 4px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cell, .wday { min-width: 0; width: 100%; cursor: pointer; }
+.cell .n {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  border-radius: 999px;
+}
+.cell.today .n { background: var(--green); color: white; }
+.thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.thumbs.n1 { grid-template-columns: 1fr; }
+.thumb, .ph {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: #efeae3;
+  object-fit: contain;
+}
+.ph { display: grid; place-items: center; font-size: 0.62rem; color: var(--muted); }
+
+.section { margin-top: 22px; }
+.week {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, 1fr);
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 6px;
+}
+.wday {
+  scroll-snap-align: start;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 140px;
+  border: 0;
+  text-align: left;
+}
+.wday h3 { font-size: 1rem; }
+.mini { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.mini img, .mini .ph {
+  width: 54px;
+  height: 54px;
+  aspect-ratio: auto;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+.mini span { font-size: 0.85rem; }
+
+.back { margin-bottom: 12px; }
+.day-list { display: grid; gap: 14px; }
+.card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+.card h2 { font-size: 1.45rem; }
+.art {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 68vh;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: #efeae3;
+}
+.caption {
+  white-space: pre-wrap;
+  margin: 0;
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 12px;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+dialog {
+  width: min(520px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  overflow: auto;
+  border: 0;
+  border-radius: 18px;
+  padding: 18px;
+  background: var(--card);
+}
+dialog::backdrop { background: rgba(28, 25, 22, 0.45); }
+form { display: grid; gap: 12px; }
+label { display: grid; gap: 6px; font-size: 0.92rem; }
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 44px;
+}
+textarea { min-height: 120px; resize: vertical; }
+.preview {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  background: #efeae3;
+  border-radius: 12px;
+}
+
+@media (min-width: 900px) {
+  .cell { min-height: 108px; }
+  .week { grid-auto-flow: unset; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: visible; }
+}
