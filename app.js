@@ -82,9 +82,8 @@ function formatLabel(value) {
 function route() {
   const raw = (location.hash || "#/").slice(1);
   const path = raw.startsWith("/") ? raw : "/" + raw;
-  const admin = path === "/admin" || path.startsWith("/admin/");
   const match = path.match(/\/dia\/(\d{4}-\d{2}-\d{2})/);
-  return { admin, day: match ? match[1] : "" };
+  return { day: match ? match[1] : "" };
 }
 
 function go(path) {
@@ -117,9 +116,45 @@ function thumb(post) {
   return '<span class="ph">' + esc(mark) + "</span>";
 }
 
+function momentOf(post) {
+  if (!post.date || !post.time) return null;
+  const parts = String(post.time).split(":");
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  const when = parseDate(post.date);
+  when.setHours(hours, minutes, 0, 0);
+  return when;
+}
+
+function statusOf(post) {
+  const when = momentOf(post);
+  if (!when) return "";
+  return when.getTime() > Date.now() ? "Programado" : "Publicado";
+}
+
+let flipTimer = 0;
+function armFlip() {
+  clearTimeout(flipTimer);
+  const now = Date.now();
+  let wait = Infinity;
+  posts.forEach((post) => {
+    const when = momentOf(post);
+    if (!when) return;
+    const delta = when.getTime() - now;
+    if (delta > 0 && delta < wait) wait = delta;
+  });
+  if (wait === Infinity) return;
+  flipTimer = setTimeout(() => {
+    if (!editor.open) render();
+    else armFlip();
+  }, Math.min(wait + 400, 2147483647));
+}
+
 function render() {
   const current = route();
   app.innerHTML = current.day ? dayHtml(current) : homeHtml(current);
+  armFlip();
 }
 
 function homeHtml(current) {
@@ -152,7 +187,8 @@ function homeHtml(current) {
       '<div class="wday" role="button" tabindex="0" data-day="' + key + '">' +
       "<h3>" + WEEK[date.getDay()] + " " + date.getDate() + "</h3>" +
       items.map((post) => {
-        return '<span class="mini">' + thumb(post) + "<span>" + esc(post.time || "Sem horário") + (post.title ? " · " + esc(post.title) : "") + "</span></span>";
+        const state = statusOf(post);
+        return '<span class="mini">' + thumb(post) + "<span>" + esc(post.time || "Sem horário") + (post.title ? " · " + esc(post.title) : "") + (state ? " · " + esc(state) : "") + "</span></span>";
       }).join("") +
       "</div>";
   }
@@ -163,22 +199,22 @@ function homeHtml(current) {
     : weekStart.getDate() + " de " + MONTHS[weekStart.getMonth()] + " a " + weekEnd.getDate() + " de " + MONTHS[weekEnd.getMonth()];
 
   const undated = posts.filter((post) => !post.date);
-  const extra = current.admin && undated.length
-    ? '<section class="section"><h2>Sem data</h2><div class="day-list" style="margin-top:10px">' + undated.map((post) => adminCard(post)).join("") + "</div></section>"
+  const extra = undated.length
+    ? '<section class="section"><h2>Sem data</h2><div class="day-list" style="margin-top:10px">' + undated.map((post) => card(post)).join("") + "</div></section>"
     : "";
 
   const empty = monthCount(cursor) === 0
-    ? '<p class="note">' + (current.admin ? "Nenhuma postagem neste mês. Use Novo post para incluir." : "Nenhuma postagem neste mês.") + "</p>"
+    ? '<p class="note">Nenhuma postagem neste mês. Use Novo post para incluir.</p>'
     : "";
 
   return (
     '<main class="app">' +
     '<header class="row between">' +
     "<div><h1>Planejamento de Postagens no Instagram</h1>" +
-    (current.admin ? '<p class="note">Visão da administradora. Neste teste, as postagens ficam só neste navegador.</p>' : "") +
+    '<p class="note">Neste teste, as postagens ficam só neste navegador.</p>' +
     "</div>" +
     '<div class="row">' +
-    (current.admin ? '<button class="btn quiet" type="button" data-client>Ver como o cliente</button><button class="btn solid" type="button" data-new>Novo post</button>' : "") +
+    '<button class="btn solid" type="button" data-new>Novo post</button>' +
     "</div></header>" +
     '<div class="toolbar">' +
     '<div class="row"><button class="btn" type="button" data-shift="-1" aria-label="Mês anterior">←</button>' +
@@ -199,20 +235,21 @@ function dayHtml(current) {
   const date = parseDate(current.day);
   const items = postsOn(current.day);
   const heading = cap(date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }));
-  const back = current.admin ? "/admin" : "/";
   const body = items.length
-    ? items.map((post) => (current.admin ? adminCard(post) : clientCard(post))).join("")
+    ? items.map((post) => card(post)).join("")
     : '<p class="note">Nenhuma postagem neste dia.</p>';
   return (
     '<main class="app">' +
-    '<button class="btn back" type="button" data-go="' + back + '">Voltar</button>' +
+    '<div class="row back"><button class="btn" type="button" data-go="/">Voltar</button><button class="btn" type="button" data-today>Hoje</button></div>' +
     "<h1>" + esc(heading) + "</h1>" +
     '<div class="day-list" style="margin-top:16px">' + body + "</div></main>"
   );
 }
 
-function clientCard(post) {
+function card(post) {
   const bits = [];
+  const status = statusOf(post);
+  if (status) bits.push('<p class="status ' + (status === "Programado" ? "wait" : "done") + '">' + esc(status) + "</p>");
   if (post.time) bits.push("<strong>" + esc(post.time) + "</strong>");
   if (post.title) bits.push("<h2>" + esc(post.title) + "</h2>");
   if (formatLabel(post.format)) bits.push('<p class="muted">' + esc(formatLabel(post.format)) + "</p>");
@@ -221,14 +258,8 @@ function clientCard(post) {
   if (String(post.link || "").trim()) bits.push('<a class="btn solid" href="' + esc(linkHref(post.link)) + '" target="_blank" rel="noopener">Ver imagem</a>');
   bits.push("</div>");
   bits.push('<p class="caption" id="cap-' + esc(post.id) + '" hidden>' + esc(post.caption || "Sem legenda.") + "</p>");
+  bits.push('<div class="actions"><button class="btn" type="button" data-edit="' + esc(post.id) + '">Editar</button><button class="btn danger" type="button" data-delete="' + esc(post.id) + '">Excluir</button></div>');
   return '<article class="card">' + bits.join("") + "</article>";
-}
-
-function adminCard(post) {
-  return clientCard(post).replace(
-    "</article>",
-    '<div class="actions"><button class="btn" type="button" data-edit="' + esc(post.id) + '">Editar</button><button class="btn danger" type="button" data-delete="' + esc(post.id) + '">Excluir</button></div></article>'
-  );
 }
 
 function openEditor(post) {
@@ -249,7 +280,9 @@ function openEditor(post) {
     '<label>Miniatura<input name="file" type="file" accept="image/*" /></label>' +
     (draftImage ? '<img class="preview" alt="" src="' + esc(draftImage) + '" /><button class="btn quiet" type="button" data-clear-image>Tirar miniatura</button>' : "") +
     '<label>Link<input name="link" type="text" placeholder="https://" value="' + esc(post && post.link ? post.link : "") + '" /></label>' +
-    '<label>Legenda<textarea name="caption">' + esc(post && post.caption ? post.caption : "") + "</textarea></label>" +
+    '<div class="field"><span>Legenda</span><textarea name="caption">' + esc(post && post.caption ? post.caption : "") + "</textarea>" +
+    '<div class="legend-actions"><button class="btn" type="button" data-paste>Colar</button><button class="btn" type="button" data-copy>Copiar</button></div>' +
+    '<button class="btn danger legend-clear" type="button" data-clear-caption>Limpar</button></div>' +
     '<div class="row"><button class="btn solid" type="submit">Salvar</button><button class="btn" type="button" data-close>Cancelar</button></div>' +
     "</form>";
   editor.showModal();
@@ -281,7 +314,6 @@ function compress(file) {
 }
 
 app.addEventListener("click", (event) => {
-  const current = route();
   const shift = event.target.closest("[data-shift]");
   const day = event.target.closest("[data-day]");
   const goButton = event.target.closest("[data-go]");
@@ -295,15 +327,11 @@ app.addEventListener("click", (event) => {
   }
   if (event.target.closest("[data-today]")) {
     cursor = parseDate(today());
-    render();
+    go("/dia/" + today());
     return;
   }
   if (event.target.closest("[data-new]")) {
     openEditor(null);
-    return;
-  }
-  if (event.target.closest("[data-client]")) {
-    go("/");
     return;
   }
   if (goButton) {
@@ -311,8 +339,7 @@ app.addEventListener("click", (event) => {
     return;
   }
   if (day) {
-    const prefix = current.admin ? "/admin" : "";
-    go(prefix + "/dia/" + day.dataset.day);
+    go("/dia/" + day.dataset.day);
     return;
   }
   if (caption) {
@@ -334,7 +361,12 @@ app.addEventListener("click", (event) => {
   }
 });
 
+editor.addEventListener("mousedown", (event) => {
+  if (event.target.closest("[data-paste], [data-copy], [data-clear-caption]")) event.preventDefault();
+});
+
 editor.addEventListener("click", (event) => {
+  const area = editor.querySelector("textarea[name=caption]");
   if (event.target.closest("[data-close]")) editor.close();
   if (event.target.closest("[data-clear-image]")) {
     draftImage = "";
@@ -342,6 +374,24 @@ editor.addEventListener("click", (event) => {
     const preview = editor.querySelector(".preview");
     if (preview) preview.remove();
     event.target.closest("[data-clear-image]").remove();
+  }
+  if (event.target.closest("[data-clear-caption]") && area) {
+    area.value = "";
+  }
+  if (event.target.closest("[data-copy]") && area) {
+    const text = area.value;
+    const done = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(text)
+      : Promise.reject();
+    done.catch(() => alert("Não consegui copiar a legenda."));
+  }
+  if (event.target.closest("[data-paste]") && area) {
+    const read = navigator.clipboard && navigator.clipboard.readText
+      ? navigator.clipboard.readText()
+      : Promise.reject();
+    read.then((text) => {
+      area.value = text;
+    }).catch(() => alert("Não consegui colar. O navegador bloqueou a leitura da área de transferência."));
   }
 });
 
