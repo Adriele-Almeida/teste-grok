@@ -361,12 +361,10 @@ app.addEventListener("click", (event) => {
   }
 });
 
-editor.addEventListener("mousedown", (event) => {
-  if (event.target.closest("[data-paste], [data-copy], [data-clear-caption]")) event.preventDefault();
-});
-
 editor.addEventListener("click", (event) => {
   const area = editor.querySelector("textarea[name=caption]");
+  const legendButton = event.target.closest("[data-paste], [data-copy], [data-clear-caption]");
+  if (legendButton && area && document.activeElement === area) area.blur();
   if (event.target.closest("[data-close]")) editor.close();
   if (event.target.closest("[data-clear-image]")) {
     draftImage = "";
